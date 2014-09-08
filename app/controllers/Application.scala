@@ -7,6 +7,10 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.Logger
 
+import models.User
+import models.daos.UserDAO
+
+
 object Application extends Controller {
 
   val loginForm = Form(
@@ -26,10 +30,10 @@ object Application extends Controller {
 
   def login = Action { implicit request =>
 
-    val (user, password) = loginForm.bindFromRequest.get
+    val (username, password) = loginForm.bindFromRequest.get
 
-    Logger.info(user);
-    Logger.info(password);
+    val user = UserDAO.find(username, password)
+    Logger.info(user.get.toString);
 
     Ok("Hello World")
   }
