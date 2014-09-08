@@ -3,7 +3,7 @@
 
 # --- !Ups
 
-create table "user" ("id" BIGSERIAL PRIMARY KEY,"username" VARCHAR(254) NOT NULL,"password" VARCHAR(254) NOT NULL);
+create table "user" ("id" BIGSERIAL PRIMARY KEY,"username" VARCHAR(254) NOT NULL,"password" VARCHAR(254) NOT NULL,"loginDateTime" TIMESTAMP);
 
 # --- !Downs
 

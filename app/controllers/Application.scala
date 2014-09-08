@@ -10,6 +10,7 @@ import play.api.Logger
 import models.User
 import models.daos.UserDAO
 
+import org.joda.time._
 
 object Application extends Controller {
 
@@ -32,10 +33,19 @@ object Application extends Controller {
 
     val (username, password) = loginForm.bindFromRequest.get
 
-    val user = UserDAO.find(username, password)
-    Logger.info(user.get.toString);
+    UserDAO.find(username, password).map{ user =>
 
-    Ok("Hello World")
+      val loggedUser = user.copy(loginDateTime = Some(DateTime.now))
+      UserDAO.save(loggedUser)
+      Logger.info(user.toString);
+      
+      Ok("Hello World")
+
+    }.getOrElse{
+      Ok(views.html.failedLogin())
+    }
+
+    
   }
 
 }

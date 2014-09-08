@@ -12,5 +12,8 @@ libraryDependencies ++= Seq(
   cache,
   ws,
   "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
-  "com.typesafe.play" %% "play-slick" % "0.8.0"
+  "com.typesafe.play" %% "play-slick" % "0.8.0",
+  "joda-time" % "joda-time" % "2.4",
+  "org.joda" % "joda-convert" % "1.6",
+  "com.github.tototoshi" %% "slick-joda-mapper" % "1.2.0"
 )

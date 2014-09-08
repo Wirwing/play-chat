@@ -54,6 +54,17 @@
 
       }
 
+      function failedLogin(){
+        var loginMessage = document.getElementById("loginMessage");
+        loginMessage.innerHTML = "Usuario y/o contraseña incorrectos."
+      }
+
+      function successLogin(username){
+
+      }
+
+      
+
     </script>
 
 
@@ -82,6 +93,11 @@
     <div class="content">
 
       <form id="loginForm" action="login" class="col-md-8 col-md-offset-2" onsubmit="checkIframe(); return false">
+
+          <div>
+            <p id="loginMessage" />
+          </div>
+
           <div class="form-group">
               <input id="username" type="text" class="form-control input-lg" placeholder="Email">
           </div>
