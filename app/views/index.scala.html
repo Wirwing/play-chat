@@ -3,13 +3,132 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bootstrap 101 Template</title>
+    <title>Ajax Chat</title>
 
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="@routes.Assets.at("stylesheets/index.css")" rel="stylesheet">
 
-    <!-- <script type="text/javascript" src="js/simple.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.rc.1/handlebars.min.js" ></script>
+
+    <!-- Templates -->
+    <script id="login-template" type="x-handlebars-template">
+
+    <div class="row">
+
+      <form id="loginForm" action="login" class="col-md-8 col-md-offset-2" onsubmit="checkIframe(); return false">
+
+        <div>
+          <p id="loginMessage" />
+        </div>
+
+        <div class="form-group">
+          <input id="username" type="text" class="form-control input-lg" placeholder="Email">
+        </div>
+        <div class="form-group">
+          <input id="password" type="password" class="form-control input-lg" placeholder="Password">
+        </div>
+        <div class="form-group">
+          <button class="btn btn-primary btn-lg btn-block">Ingresar</button>
+        </div>
+      </form>
+    </div>
+    </script> 
+    
+    <script id="chat-body-template" type="x-handlebars-template">
+
+    <div class="row">
+
+      <div class="col-md-8 col-md-offset-2">
+
+        <h1>Hola {{username}}</h1> <button onclick="logout();">Salir</button>
+
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <span class="glyphicon glyphicon-comment"></span> Chat
+          </div>
+          <div class="panel-body" id="chat-content">
+
+          </div>
+          <div class="panel-footer">
+            <form class="input-group" onsubmit="sendMessage(); return false">
+              <input id="message-input" type="text" class="form-control input-sm" placeholder="Escribe tu mensaje aquí..." />
+              <span class="input-group-btn"><submit class="btn btn-warning btn-sm" id="btn-chat">Enviar</submit></span>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </script> 
+    
+    <script id="chat-item-template" type="x-handlebars-template">
+
+    <ul class="chat">
+      {{#each this}}
+        <li class="{{#if is_author}}right clearfix{{else}}left clearfix{{/if}}"><span class="chat-img {{#if is_author}}pull-right{{else}}pull-left{{/if}}">
+            <img src="{{#if is_author}}http://placehold.it/50/FA6F57/fff&text=ME{{else}}http://placehold.it/50/55C1E7/fff&text=U{{/if}}" alt="User Avatar" class="img-circle" />
+          </span>
+          <div class="chat-body clearfix">
+              <div class="header">
+                  {{#if is_author}}
+                    <small class=" text-muted"></small>
+                    <strong class="pull-right primary-font">{{username}}</strong>
+                  {{else}}
+                    <strong class="primary-font">{{username}}</strong> <small class="pull-right text-muted"></small>
+                  {{/if}}
+              </div>
+              <p style="font-size: 16px;">{{text}}</p>
+          </div>
+        </li>
+      {{/each }}
+    </ul>
+
+    </script> 
+
+</head>
+<body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">FMAT Chat</a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Inicio</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+    <div class="content" id="app-placeholder"/>
+
     <script type="text/javascript">
+
+      var loginTemplate = Handlebars.compile(document.getElementById("login-template").innerHTML);
+      var chatTemplate = Handlebars.compile(document.getElementById("chat-body-template").innerHTML);
+      var chatItemTemplate = Handlebars.compile(document.getElementById("chat-item-template").innerHTML);
+
+      var placeholder = document.getElementById("app-placeholder");
+
+      function init(){
+
+        var username = localStorage.getItem("username")
+
+        if(username){
+          initChat();
+        }else{
+          placeholder.innerHTML = loginTemplate({});  
+        }
+
+      }
 
       var oIFrame = null;
       
@@ -60,56 +179,119 @@
       }
 
       function successLogin(username){
+        localStorage.setItem("username", username);
+        initChat();
+      }
+
+      // All HTML5 Rocks properties support CORS.
+      var url = 'messages';
+      var continueFetching = true;
+      var author;
+      var chatContent;
+
+      function initChat(){
+
+        author = localStorage.getItem("username");
+        placeholder.innerHTML = chatTemplate({username: author});
+        chatContent = document.getElementById("chat-content");
+
+        getMessages();
 
       }
 
-      
+      function logout(){
+        continueFetching = false;
+        localStorage.removeItem("username");
+        placeholder.innerHTML = loginTemplate({}); 
+      }
+
+      function sendMessage(){
+
+        var messageInput = document.getElementById("message-input");
+        var author = localStorage.getItem("username");
+
+        var data = { text: messageInput.value, username: author };
+        data = JSON.stringify(data);
+        var xhr = createCORSRequest('POST', url);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+
+        // Response handlers.
+        xhr.onload = function() {
+          console.log(xhr.responseText);
+        };
+
+        xhr.onerror = function() {
+          console.log(xhr.statusText);
+        };
+
+        xhr.send(data);
+
+        return false;
+
+      }
+
+      function getMessages(){
+
+        var xhr = createCORSRequest('GET', url);
+        if (!xhr) {
+          console.log('CORS not supported');
+          return;
+        }
+
+        // Response handlers.
+        xhr.onload = function() {
+
+          if(continueFetching){
+            console.log(xhr.responseText);
+            var data = JSON.parse(xhr.responseText);
+            for(var i in data){
+              data[i].is_author = data[i].username === author;
+            }
+            
+            chatContent.innerHTML = chatItemTemplate(data);
+
+            setTimeout(getMessages, 3000);
+            
+          }
+
+        };
+
+        xhr.onerror = function() {
+          console.log(xhr.statusText);
+          if(continueFetching)
+            setTimeout(getMessages, 3000);
+        };
+
+        xhr.send();
+
+      }
+
+      // Create the XHR object.
+      function createCORSRequest(method, url) {
+        var xhr = new XMLHttpRequest();
+        if ("withCredentials" in xhr) {
+          // XHR for Chrome/Firefox/Opera/Safari.
+          xhr.open(method, url, true);
+        } else if (typeof XDomainRequest != "undefined") {
+          // XDomainRequest for IE.
+          xhr = new XDomainRequest();
+          xhr.open(method, url);
+        } else {
+          // CORS not supported.
+          xhr = null;
+        }
+        return xhr;
+      }
+
+      var checkLoad = function() {   
+        document.readyState !== "complete" ? setTimeout(checkLoad, 11) : init();
+      };
+
+      checkLoad();
 
     </script>
 
 
-</head>
-<body>
-
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">Project name</a>
-        </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </div>
-
-    <div class="content">
-
-      <form id="loginForm" action="login" class="col-md-8 col-md-offset-2" onsubmit="checkIframe(); return false">
-
-          <div>
-            <p id="loginMessage" />
-          </div>
-
-          <div class="form-group">
-              <input id="username" type="text" class="form-control input-lg" placeholder="Email">
-          </div>
-          <div class="form-group">
-              <input id="password" type="password" class="form-control input-lg" placeholder="Password">
-          </div>
-          <div class="form-group">
-              <button class="btn btn-primary btn-lg btn-block">Ingresar</button>
-          </div>
-      </form>
-
-    </div><!-- /.container -->
-
-</body>
+  </body>
 </html>

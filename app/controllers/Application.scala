@@ -39,7 +39,7 @@ object Application extends Controller {
       UserDAO.save(loggedUser)
       Logger.info(user.toString);
       
-      Ok("Hello World")
+      Ok(views.html.successLogin(user.username))
 
     }.getOrElse{
       Ok(views.html.failedLogin())
